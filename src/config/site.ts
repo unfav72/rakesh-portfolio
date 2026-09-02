@@ -147,17 +147,17 @@ export const site = {
   },
 
   experience: {
-    heading: 'EXPERIENCE',
+    heading: 'INTERNSHIP',
 
     items: [
       {
-        period: '2024 – Present',
-        role: 'AI Developer / Student Developer',
-        company: 'Independent Projects',
+        period: 'December 2025 - January 2026',
+        role: 'Machine Learning Intern',
+        company: 'Tech Volt Pvt Ltd , Coimbatore',
       },
 
       {
-        period: '2024 – Present',
+        period: '2025 – Present',
         role: 'Graphic Designer & Video Editor',
         company: 'Freelance',
       },
@@ -171,25 +171,30 @@ export const site = {
 
     sub: 'Have an idea, a project, or simply want to say hello?',
 
-    href: 'mailto:rakesh@example.com',
+    href: 'mailto:chinnarocky727@gmail.com.com',
 
     marquee: ['RAKESH', 'AI DEVELOPER', 'CREATIVE'],
 
     links: [
       {
         label: 'LinkedIn',
-        href: null as string | null,
+        href: 'https://www.linkedin.com/in/rakesh-chinnathurai-269933358/' as string | null,
       },
-
       {
-        label: 'Instagram',
-        href: null as string | null,
+        label: 'GitHub',
+        href: 'https://github.com/unfav72' as string | null,
       },
-
       {
         label: 'Email',
-        href: 'mailto:rakesh@example.com' as string | null,
+        href: 'mailto:chinnarocky727@gmail.com' as string | null,
       },
+      {
+        label: 'Instagram',
+        href: 'https://www.instagram.com/ft.rxcky' as string | null,
+      },
+
+
+
     ],
   },
 } as const

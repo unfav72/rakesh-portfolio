@@ -14,19 +14,22 @@ export default function SmoothScroll() {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
     const lenis = new Lenis({
-      duration: 1.05,
-      easing: (x: number) => Math.min(1, 1.001 - Math.pow(2, -10 * x)),
+      duration: 1.2,
+      easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
       smoothWheel: true,
-      touchMultiplier: 1.6,
-      autoRaf: false,
+      wheelMultiplier: 1.1,
+      touchMultiplier: 1.8,
+      infinite: false,
     })
 
-    let frame = 0
-    const loop = (time: number) => {
+    let frame: number
+    const raf = (time: number) => {
       lenis.raf(time)
-      frame = requestAnimationFrame(loop)
+      frame = requestAnimationFrame(raf)
     }
-    frame = requestAnimationFrame(loop)
+    frame = requestAnimationFrame(raf)
 
     /**
      * In-page links travel instead of jumping. A native hash navigation sets
