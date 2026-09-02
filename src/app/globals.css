@@ -1,0 +1,794 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   TYPEFACE
+   Archivo, self-hosted as a two-axis variable font (weight 100-900, width
+   62-125%). The width axis is the reason for this family: it is what gets the
+   display word to the reference's heavy, wide proportion without faking it,
+   and it means the eyebrow, the year and the body copy are all cut from the
+   same sheet. Self-hosted so the build has no network dependency and the
+   first paint has no third-party round trip.
+   =========================================================================== */
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Archivo';
+  font-style: normal;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  font-display: swap;
+  src: url('/fonts/archivo-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* The hand that writes on the photographs. Upright, rounded, letters
+   separated — print handwriting rather than a decorative cursive, which is
+   what the reference captions actually are. Self-hosted like the grotesk. */
+@font-face {
+  font-family: 'Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/architects-daughter.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2212, U+2215;
+}
+
+/* ===========================================================================
+   TOKENS
+   Paper is warm and never pure white. Ink is never pure black. The red is
+   sampled straight off the reference artwork (#eb1926).
+   =========================================================================== */
+@theme {
+  --color-paper: #f3f1eb;
+  --color-paper-deep: #e8e4da;
+  --color-ink: #121211;
+  --color-graphite: #6f6b63;
+  /* Darker than it looks. The black sheet carries screened crease and fibre
+     layers, and screen lifts blacks disproportionately — starting here puts
+     the finished surface at the reference's measured (20,22,21) instead of
+     charcoal. Compensate the base, do not flatten the texture. */
+  --color-noir: #0c0d0c;
+  --color-signal: #eb1926;
+
+  --font-display: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-body: 'Archivo', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-hand: 'Hand', 'Segoe Print', 'Bradley Hand', cursive;
+}
+
+:root {
+  /* Ruled graph paper. Fixed px — printed grids do not scale with the browser. */
+  --grid-cell: 30px;
+  --grid-line: rgba(56, 52, 44, 0.11);
+  /* Smoothed pointer vector, written by usePointerVector. */
+  --px: 0;
+  --py: 0;
+  /* How far the hero lock-up sits above the optical centre. */
+  --lockup-shift: -2.4vh;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --grid-cell: 46px;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    /* Portrait aspect: more room below the word, so the lock-up rides higher
+       and the signature and scroll cue at the foot get somewhere to live. */
+    --lockup-shift: -7vh;
+  }
+}
+
+/* ===========================================================================
+   CASCADE LAYERS
+   Everything below is layered on purpose. Tailwind declares
+   `theme, base, components, utilities`; unlayered rules outrank all of them,
+   which means an unlayered `.paper-sheet { position: relative }` silently
+   beats `class="absolute"` and the sheet collapses to nothing. Putting the
+   design system in `components` restores the expected order: utilities win.
+   =========================================================================== */
+
+@layer base {
+  html {
+    overflow-x: clip;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
+  }
+
+  ::selection {
+    background: var(--color-signal);
+    color: #fff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 4px;
+    border-radius: 1px;
+  }
+
+  .on-noir :focus-visible {
+    outline-color: #fff;
+  }
+}
+
+@layer components {
+  /* ===========================================================================
+     PAPER STACK
+     Order matters: stock, ruling, creases, fibre. The ruling sits UNDER the
+     crease lighting because the grid is printed on the sheet, not floating
+     above it.
+     =========================================================================== */
+  .paper-sheet {
+    position: relative;
+    isolation: isolate;
+    /* The texture layers are deliberately oversized (the grid is scaled, the
+       fibre is inset -4%) so their motion never exposes an edge. A sheet
+       clips its own texture, or those few percent become page-wide overflow. */
+    overflow: clip;
+    background-color: var(--color-paper);
+  }
+
+  .paper-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .paper-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-line) 0 1px, transparent 1px 100%),
+      linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 100%);
+    background-size: var(--grid-cell) var(--grid-cell);
+    /* A scanned sheet is never perfectly square to the screen. */
+    transform: rotate(0.14deg) scale(1.02);
+    transform-origin: center;
+    /* Ink density varies across the page — the detail that kills the CSS look. */
+    mask-size: 900px 900px;
+    -webkit-mask-size: 900px 900px;
+  }
+
+  .paper-crumple {
+    mix-blend-mode: multiply;
+    background-repeat: repeat;
+    background-size: 1200px 1200px;
+  }
+
+  .paper-fibre {
+    inset: -4%;
+    mix-blend-mode: multiply;
+    will-change: transform;
+    animation: fibre-drift 46s var(--ease-breath, cubic-bezier(0.45, 0, 0.55, 1)) infinite;
+  }
+
+
+  .paper-edge-shade {
+    background:
+      radial-gradient(115% 88% at 50% 45%, transparent 52%, rgba(70, 62, 48, 0.10) 100%);
+    mix-blend-mode: multiply;
+  }
+
+  /* Everything that is actual content sits above the texture stack. */
+  .paper-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===========================================================================
+     TYPE
+     =========================================================================== */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-stretch: 118%;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+  }
+
+  /* The reference eyebrow measures 22.15 x its own cap height; Archivo at
+     default width gives 18.8. Widening the axis rather than tracking it out
+     keeps the letterforms intact and lands on 22.2. */
+  .eyebrow {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-stretch: 125%;
+    letter-spacing: 0;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .meta {
+    font-family: var(--font-body);
+    font-weight: 500;
+    letter-spacing: 0.005em;
+    line-height: 1;
+  }
+
+  .copy {
+    font-weight: 400;
+    line-height: 1.62;
+    letter-spacing: 0.002em;
+  }
+
+  /* ===========================================================================
+     CURSOR
+     =========================================================================== */
+  html.custom-cursor,
+  html.custom-cursor * {
+    cursor: none !important;
+  }
+
+  /* ===========================================================================
+     REDUCED MOTION
+     Not a token gesture: the loops stop, the drift stops, the parallax is
+     neutralised, and every reveal resolves to its final state immediately.
+     =========================================================================== */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    .paper-fibre {
+      animation: none !important;
+    }
+
+    :root {
+      --px: 0 !important;
+      --py: 0 !important;
+    }
+  }
+
+  /* ===========================================================================
+     LENIS
+     =========================================================================== */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+
+  /* ===========================================================================
+     CURSOR DOT
+     =========================================================================== */
+  .cursor-dot {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--color-ink);
+    border: 1px solid transparent;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      height 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      background-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity 0.2s linear;
+  }
+  .cursor-dot[data-on='true'] {
+    opacity: 1;
+  }
+  .cursor-dot[data-hover='true'] {
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border-color: var(--color-ink);
+  }
+
+  /* ===========================================================================
+     SHEET REVEAL
+     The stock colour is already on <body>, so this fades in the ruling and the
+     creases — the sheet is there from frame one, the print arrives a beat later.
+     =========================================================================== */
+  .sheet-in {
+    animation: sheet-in 1.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* ===========================================================================
+     SECTION 02 GRID
+     Column ratios measured off the reference:
+       portrait  9.1% → 29.0%   copy 33.7% → 65.4%   aside 70.8% → 92.1%
+     On phones the same four blocks restack into one column, with the portrait
+     held at 64% width so the photograph stays the dominant object on the page
+     instead of becoming a letterboxed strip.
+     =========================================================================== */
+  .intro-grid {
+    display: grid;
+    grid-template-areas: 'heading' 'portrait' 'copy' 'aside';
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: clamp(2rem, 6vw, 3.5rem);
+  }
+
+  .intro-grid > .area-heading {
+    grid-area: heading;
+  }
+  .intro-grid > .area-portrait {
+    grid-area: portrait;
+    width: 64%;
+  }
+  .intro-grid > .area-copy {
+    grid-area: copy;
+  }
+  .intro-grid > .area-aside {
+    grid-area: aside;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.75rem, 3.4vw, 3rem);
+  }
+
+  /* Tablet gets its own composition rather than the phone stack: the portrait
+     keeps its place to the left of HELLO, and skills and experience sit side
+     by side underneath instead of leaving half the sheet empty. */
+  @media (min-width: 768px) and (max-width: 899px) {
+    .intro-grid {
+      grid-template-areas:
+        'portrait heading'
+        'portrait copy'
+        'aside    aside';
+      grid-template-columns: 34fr 60fr;
+      column-gap: 6%;
+      align-items: start;
+    }
+
+    .intro-grid > .area-portrait {
+      width: 100%;
+    }
+
+    .intro-grid > .area-aside {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6%;
+      align-items: start;
+    }
+  }
+
+  @media (min-width: 900px) {
+    .intro-grid {
+      grid-template-areas:
+        'portrait heading aside'
+        'portrait copy    aside';
+      grid-template-columns: 23.5fr 38fr 25.5fr;
+      grid-template-rows: auto 1fr;
+      column-gap: 6.1%;
+      row-gap: clamp(1rem, 2.2vw, 2.25rem);
+      align-items: start;
+    }
+
+    .intro-grid > .area-portrait {
+      width: 100%;
+    }
+  }
+
+  /* =========================================================================
+     HERO LOCK-UP
+     Desktop reproduces the reference exactly: the word takes 77.5% of the
+     viewport (10.47vw — the derivation is in config/tokens.ts) and the labels
+     are pinned out of flow so they cannot widen the block, with the eyebrow's
+     baseline landing 14px above the cap line at reference scale.
+
+     Phones get a different composition rather than a scaled one. The word
+     takes more of the width, and the labels drop into normal flow above it
+     with real space — because both of them hit their legibility floors on a
+     small screen, and an em-derived gap that small puts them on top of the
+     letters.
+     ========================================================================= */
+  .lockup {
+    --label-gap: -0.107em;
+    --year-drop: 0.082em;
+    font-size: clamp(2.25rem, 10.47vw, 17rem);
+    line-height: 1;
+  }
+
+  /* The proof of the word, printed before anything else. CSS rather than
+     JS so it is on the paper at first paint instead of waiting for hydration
+     — which is the difference between the poster being there when you arrive
+     and the page looking blank for half a second. */
+  .word-ghost {
+    animation: ghost-in 0.9s cubic-bezier(0.4, 0, 0.2, 1) 0.18s both;
+  }
+
+  .lockup-labels {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 100%;
+    margin-bottom: var(--label-gap);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+
+  @media (max-width: 767px) {
+    .lockup {
+      --year-drop: 0em;
+      font-size: 11.6vw;
+    }
+
+    .lockup-labels {
+      position: static;
+      margin-bottom: 0.5rem;
+    }
+  }
+
+  /* =========================================================================
+     IDENTITY MARQUEE
+     A slow left-to-right drift, and the whole difficulty is that it must never
+     restart. Scroll into it, resize the window, re-render React, hover it —
+     the phase has to survive all of that or the strip stops reading as one
+     continuous physical thing.
+
+     So it is a plain CSS animation on a stable node, and every one of those
+     hazards falls away for a structural reason rather than a workaround:
+
+       scroll / in-view   CSS animations do not care where the viewport is,
+                          so the marquee is never gated on an observer
+       React re-render    the node is not remounted and the animation-name
+                          never changes, so the running animation is untouched
+       resize             the travel is a PERCENTAGE of the track, so a new
+                          viewport changes the distance but not the progress —
+                          it re-lays-out mid-stride instead of jumping. And
+                          because the type is sized in vw, the track scales
+                          with the viewport, so a fixed duration already gives
+                          a constant perceived speed. Nothing to recompute,
+                          therefore nothing to jump.
+       hover              there is no hover handler at all
+
+     Three copies rather than two: the loop shifts by exactly one copy, and
+     with three the viewport is still covered at the moment of the reset even
+     where the clamp caps the type on a very wide screen.
+     ========================================================================= */
+  .marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee-drift var(--marquee-duration, 22s) linear infinite;
+  }
+
+  /* Visible, composed, and still. Not hidden — accessibility should not
+     delete the section, only stop it moving. */
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+      transform: translate3d(-33.3333%, 0, 0);
+    }
+  }
+
+  /* =========================================================================
+     POLAROIDS
+     Geometry measured off the reference, in card-relative units so the whole
+     card scales as one object:
+
+       card    1 : 1.19       border  4% of card width, three sides
+       photo   1.24 landscape caption band takes the remainder, ~41%
+
+     The card is its own container, so the handwriting is sized in `cqw` and
+     tracks the card exactly at every breakpoint without a single media query.
+
+     Three nested transforms, each with one job, because they run on different
+     clocks — the same discipline as the video plate: the stagger is static
+     config, the tilt is a rAF loop, the lift is a CSS transition. Collapse
+     them onto one element and the transition smooths the already-smoothed
+     tilt into lag.
+     ========================================================================= */
+  /* Three across only when the cards can stay big enough for the handwriting
+     to read — below that they become a scrapbook column instead, alternating
+     left / centre / right, at a width that keeps the captions legible. Three
+     shrunken columns would technically preserve the layout and destroy the
+     thing the layout is for. */
+  .studio-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(2.25rem, 6vw, 3.5rem);
+    margin-top: clamp(1.5rem, 3vw, 2.75rem);
+  }
+
+  .studio-row > * {
+    width: min(100%, 24rem);
+  }
+  .studio-row > *:nth-child(1) {
+    align-self: flex-start;
+  }
+  .studio-row > *:nth-child(3) {
+    align-self: flex-end;
+  }
+
+  @media (min-width: 1024px) {
+    .studio-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: start;
+      gap: 2.2%;
+      /* The outer two rise past the title; the middle one drops below it. */
+      margin-top: -2.6vw;
+    }
+
+    .studio-row > *,
+    .studio-row > *:nth-child(1),
+    .studio-row > *:nth-child(3) {
+      width: auto;
+      align-self: auto;
+    }
+  }
+
+  .polaroid-place {
+    perspective: 1200px;
+  }
+
+  /* Attention without disassembly: the others step back a little, they do not
+     leave.
+
+     Deliberately on the outer slot rather than on `.polaroid-place`: Framer
+     animates that element's opacity on entry and leaves `opacity: 1` inline
+     afterwards, and an inline style beats any stylesheet rule. The slot is a
+     plain node nothing animates, so the rule actually lands. */
+  .polaroid-slot {
+    transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .studio-row:hover .polaroid-slot {
+    opacity: 0.92;
+  }
+  .studio-row .polaroid-slot:hover {
+    opacity: 1;
+  }
+
+  .polaroid-tilt {
+    transform: rotateY(calc(var(--tx, 0) * 1.6deg)) rotateX(calc(var(--ty, 0) * -1.3deg));
+    transform-style: preserve-3d;
+  }
+
+  .polaroid-card {
+    container-type: inline-size;
+    aspect-ratio: 1 / 1.19;
+    display: flex;
+    flex-direction: column;
+    padding: 4% 4% 0;
+    background: #f7f5f0;
+    transform: rotate(var(--rot, 0deg));
+    transition:
+      transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    /* A photograph lying on paper, not a panel floating over a page. */
+    box-shadow:
+      0 1px 1px rgba(38, 32, 22, 0.16),
+      0 10px 18px -12px rgba(38, 32, 22, calc(0.3 + var(--shade, 0) * 0.1));
+  }
+
+  /* Picked up slightly, and straightened while it is in the hand. */
+  .polaroid-place:hover .polaroid-card {
+    transform: rotate(calc(var(--rot, 0deg) * 0.4)) translateY(-6px);
+    box-shadow:
+      0 1px 1px rgba(38, 32, 22, 0.18),
+      0 20px 30px -14px rgba(38, 32, 22, 0.42);
+  }
+
+  .polaroid-photo {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1.24;
+    overflow: hidden;
+    background: #c9c4b9;
+  }
+
+  .polaroid-photo > img,
+  .polaroid-photo > video {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    transform: scale(1);
+    transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .polaroid-place:hover .polaroid-photo > img,
+  .polaroid-place:hover .polaroid-photo > video {
+    transform: scale(1.03);
+  }
+
+  /* Sized against the LONGEST caption, not the average: the Nietzsche quote
+     runs four lines plus its attribution and has to sit inside the band with
+     room to spare. This hand is wide — roughly 0.55em average advance — which
+     is what caught the first pass out.
+     `min-height: 0` is the other half: without it the caption is a flex item
+     that cannot shrink below its content, so one long quote silently pushes
+     its card taller than the other two and the row stops being a row. */
+  .polaroid-caption {
+    font-family: var(--font-hand);
+    font-size: 5.8cqw;
+    line-height: 1.34;
+    color: #22201c;
+    padding: 5.5% 2% 0 3%;
+    min-height: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .polaroid-tilt {
+      transform: none;
+    }
+    .polaroid-place:hover .polaroid-card {
+      transform: rotate(var(--rot, 0deg));
+    }
+    .polaroid-place:hover .polaroid-photo > img,
+    .polaroid-place:hover .polaroid-photo > video {
+      transform: none;
+    }
+  }
+
+  /* =========================================================================
+     THE LAST PAGE
+     The heading IS the button. There is no rectangle around it, no fill, no
+     hover box — the typography is the interface, so everything that happens on
+     hover happens to the type itself: it steps 5px right, a red rule draws
+     underneath it, and the arrow turns from → to ↗.
+
+     All three are transform and colour only, and the rule grows on scaleX
+     rather than width, so nothing here touches layout.
+     ========================================================================= */
+  .connect-cta {
+    /* Block, shrink-to-fit: the arrow has to flow with the text so it still
+       sits after the last word when the heading wraps, and the red rule has to
+       span the type rather than the column. An inline-flex row gave the word a
+       full-width box the moment it wrapped and stranded the arrow at the far
+       right of the page. */
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    background: none;
+    border: 0;
+    padding: 0;
+    color: var(--color-ink);
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .connect-cta:hover,
+  .connect-cta:focus-visible {
+    transform: translateX(5px);
+  }
+
+  /* Inline, so the arrow travels with the last word. Transforms do not apply
+     to non-replaced inline boxes, which is why the 5px step lives on the
+     button above rather than here. */
+  .connect-cta__word {
+    display: inline;
+  }
+
+  .connect-cta__arrow {
+    display: inline-block;
+    width: 0.5em;
+    height: 0.34em;
+    margin-left: 0.16em;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  /* → becomes ↗, and leaves in the direction it now points. */
+  .connect-cta:hover .connect-cta__arrow,
+  .connect-cta:focus-visible .connect-cta__arrow {
+    transform: translate(6px, -6px) rotate(-45deg);
+  }
+
+  .connect-cta__rule {
+    display: block;
+    height: 3px;
+    margin-top: 0.07em;
+    background: var(--color-signal);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .connect-cta:hover .connect-cta__rule,
+  .connect-cta:focus-visible .connect-cta__rule {
+    transform: scaleX(1);
+  }
+
+  /* Atmosphere, not a headline: it has to lose every argument with the CTA. */
+  .footer-marquee {
+    color: var(--color-ink);
+    opacity: 0.055;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .connect-cta,
+    .connect-cta__arrow,
+    .connect-cta__rule {
+      transition: none;
+    }
+  }
+
+  /* Section headings: EDUCATION / SKILLS / EXPERIENCE all sit at one size. */
+  .section-head {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-stretch: 108%;
+    text-transform: uppercase;
+    letter-spacing: -0.03em;
+    line-height: 0.92;
+    font-size: clamp(1.5rem, 2.75vw, 3.5rem);
+  }
+
+  .body-copy {
+    font-size: clamp(0.875rem, 1.22vw, 1.125rem);
+    line-height: 1.62;
+    max-width: 46ch;
+  }
+}
+
+@keyframes fibre-drift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(-1.1%, 0.9%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ghost-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.07;
+  }
+}
+
+@keyframes marquee-drift {
+  from {
+    transform: translate3d(-33.3333%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}

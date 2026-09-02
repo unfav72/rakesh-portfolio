@@ -1,0 +1,10 @@
+# One line ending everywhere, so a clone on another machine is not a diff.
+* text=auto eol=lf
+
+# Binaries git must never try to normalise.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.mp4   binary
+*.woff2 binary

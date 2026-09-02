@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+.DS_Store
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
+tools/out
+
+# Design reference screenshots of another designer's published portfolio.
+# Kept locally because the geometry was measured off them, but not
+# redistributed — the numbers that matter are recorded in src/config/tokens.ts
+# and docs/BRIEF.md. Your own source photos and logos DO ship.
+reference/entire-portfolio.jpg
+reference/hero.jpg
+reference/studio-section.jpg
