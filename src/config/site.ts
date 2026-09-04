@@ -10,12 +10,12 @@ export const site = {
   /** Shown letter-by-letter in the hero. */
   displayWord: 'PORTFOLIO',
 
-  /** P-O-R-T-F-[O]-L-I-O */
-  faceLetterIndex: 8,
+  /** Set to null to remove face illustration from the hero word */
+  faceLetterIndex: null as number | null,
 
   eyebrow: 'AI DEVELOPER / GRAPHIC DESIGNER /EDITOR',
 
-  year: '2026',
+  year: '',
 
   firstName: 'RAKESH',
 

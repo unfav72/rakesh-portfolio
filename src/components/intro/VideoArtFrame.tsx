@@ -89,15 +89,21 @@ export default function VideoArtFrame({
   useEffect(() => {
     const el = root.current
     if (!el || !video) return
-    const io = new IntersectionObserver(([entry]) => setActive(entry.isIntersecting), {
-      // A screen of margin: ready before it is ever looked at.
-      rootMargin: '100% 0px',
-      threshold: 0,
-    })
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        setActive(entry.isIntersecting)
+      },
+      {
+        // A screen of margin: ready before it is ever looked at.
+        rootMargin: '100% 0px',
+        threshold: 0,
+      },
+    )
     io.observe(el)
     return () => io.disconnect()
   }, [video])
 
+  /* ----------------------------------------------- continuous seamless loop playback */
   useEffect(() => {
     const el = videoRef.current
     if (!el || !video) return
@@ -108,21 +114,52 @@ export default function VideoArtFrame({
     }
 
     let cancelled = false
-    el.play().catch(() => {
+    const playVideo = () => {
       if (cancelled) return
-      // Autoplay refused. Retry on the first thing the visitor does, rather
-      // than putting a play button on a piece of artwork.
-      const retry = () => {
-        el.play().catch(() => {})
-      }
-      window.addEventListener('pointerdown', retry, { once: true })
-      window.addEventListener('keydown', retry, { once: true })
-    })
+      el.play().catch(() => {
+        if (cancelled) return
+        // Autoplay refused. Retry on the first visitor interaction
+        const retry = () => {
+          el.play().catch(() => {})
+        }
+        window.addEventListener('pointerdown', retry, { once: true })
+        window.addEventListener('keydown', retry, { once: true })
+        window.addEventListener('touchstart', retry, { once: true })
+        window.addEventListener('scroll', retry, { once: true })
+      })
+    }
 
+    playVideo()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && active) {
+        playVideo()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
       cancelled = true
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [active, video])
+
+  /* Seamless loop helpers: reset before EOF buffer freeze */
+  const handleTimeUpdate = () => {
+    const el = videoRef.current
+    if (el && el.duration && el.currentTime >= el.duration - 0.08) {
+      el.currentTime = 0
+      el.play().catch(() => {})
+    }
+  }
+
+  const handleEnded = () => {
+    const el = videoRef.current
+    if (el) {
+      el.currentTime = 0
+      el.play().catch(() => {})
+    }
+  }
 
   /* ----------------------------------------------------------------- treatment */
   // alpha = 1 − luminance, then steepened so only the backdrop band dissolves.
@@ -192,16 +229,17 @@ export default function VideoArtFrame({
         {video ? (
           <video
             ref={videoRef}
-            /* Only given a source once it is near the viewport. */
-            src={active ? video : undefined}
+            src={video}
             poster={poster ?? undefined}
             autoPlay
             muted
             loop
             playsInline
-            preload="metadata"
+            preload="auto"
             disablePictureInPicture
             controls={false}
+            onTimeUpdate={handleTimeUpdate}
+            onEnded={handleEnded}
             aria-label={alt || undefined}
             className="h-full w-full"
             style={mediaStyle}

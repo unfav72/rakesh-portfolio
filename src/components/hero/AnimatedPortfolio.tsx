@@ -15,8 +15,8 @@ const wobble = (() => {
 
 type Props = {
   word: string
-  /** Index of the character the face illustration stands in for. */
-  faceIndex: number
+  /** Index of the character the face illustration stands in for, or null to disable. */
+  faceIndex?: number | null
 }
 
 /**
@@ -67,8 +67,8 @@ export default function AnimatedPortfolio({ word, faceIndex }: Props) {
             key={i}
             style={{
               display: 'inline-block',
-              width: i === faceIndex ? `${face.slot}em` : undefined,
-              visibility: i === faceIndex ? 'hidden' : undefined,
+              width: faceIndex != null && i === faceIndex ? `${face.slot}em` : undefined,
+              visibility: faceIndex != null && i === faceIndex ? 'hidden' : undefined,
             }}
           >
             {c}
@@ -78,7 +78,7 @@ export default function AnimatedPortfolio({ word, faceIndex }: Props) {
 
       <span aria-hidden="true" className="relative">
         {chars.map((char, i) => {
-          if (i === faceIndex) {
+          if (faceIndex != null && i === faceIndex) {
             return (
               <span
                 key={i}
