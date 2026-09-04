@@ -11,7 +11,7 @@ export const site = {
   displayWord: 'PORTFOLIO',
 
   /** P-O-R-T-F-[O]-L-I-O */
-  faceLetterIndex: 8,
+  
 
   eyebrow: 'AI DEVELOPER / GRAPHIC DESIGNER /EDITOR',
 
